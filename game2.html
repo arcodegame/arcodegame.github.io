@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<style>
+		body, html {
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+		}
+		canvas {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			display: block;
+			background-color: black;
+		}
+	</style>
+</head>
+<body>
+	<canvas id="canvas" width="1920" height="1080"></canvas>
+	<script>
+		const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+
+		let gameState = "start"; // "start", "playing", "gameover"
+
+		let characterX = canvas.width / 2;
+		const characterY = canvas.height - 50;
+		const characterWidth = 20;
+		const characterHeight = 20;
+		let characterSpeed = 15;
+
+		let baseObjectSpeed = 4;
+		let baseObjectSize = 20;
+		let spawnInterval = 60;
+
+		let objects = [];
+		let rawScore = 0;  // score in float
+		let frameCount = 0;
+
+		let leftPressed = false;
+		let rightPressed = false;
+
+		// Draw start screen
+		function drawStartScreen() {
+			ctx.fillStyle = "white";
+			ctx.font = "48px Arial";
+			ctx.textAlign = "center";
+			ctx.fillText("Press Arrow Keys to Start", canvas.width / 2, canvas.height / 2);
+		}
+
+		// Draw game over screen
+		function drawGameOverScreen(scoreRounded) {
+			ctx.fillStyle = "red";
+			ctx.font = "48px Arial";
+			ctx.textAlign = "center";
+			ctx.fillText("Game Over", canvas.width / 2, canvas.height / 2 - 100);
+			ctx.fillText("Score: " + scoreRounded, canvas.width / 2, canvas.height / 2 - 40);
+			ctx.fillText("Currency Earned: " + scoreRounded, canvas.width / 2, canvas.height / 2 + 20);
+
+			ctx.fillStyle = "white";
+			ctx.font = "32px Arial";
+			ctx.fillText("Press R to Restart", canvas.width / 2, canvas.height / 2 + 100);
+			ctx.fillText("Press B to Return to Menu", canvas.width / 2, canvas.height / 2 + 150);
+		}
+
+		// Draw score on screen
+		function drawScore(scoreRounded) {
+			ctx.fillStyle = "white";
+			ctx.font = "20px Arial";
+			ctx.textAlign = "left";
+			ctx.fillText("Score: " + scoreRounded, 20, 30);
+		}
+
+		function gameLoop() {
+			ctx.clearRect(0, 0, canvas.width, canvas.height);
+			let score = Math.floor(rawScore);
+
+			if (gameState === "start") {
+				drawStartScreen();
+			} else if (gameState === "playing") {
+				// Increase difficulty with score
+				let objectSpeed = baseObjectSpeed + score / 50;
+				let objectSize = baseObjectSize + Math.min(score / 20, 40);
+				let currentSpawnRate = Math.max(spawnInterval - Math.floor(score / 20), 10);
+
+				// Move player
+				if (leftPressed && characterX > 0) {
+					characterX -= characterSpeed;
+					rawScore += 0.2;
+				} else if (rightPressed && characterX < canvas.width - characterWidth) {
+					characterX += characterSpeed;
+					rawScore += 0.2;
+				}
+
+				// Draw player
+				ctx.fillStyle = "blue";
+				ctx.fillRect(characterX, characterY, characterWidth, characterHeight);
+
+				// Spawn new objects
+				if (frameCount % currentSpawnRate === 0) {
+					let objectX = Math.random() * (canvas.width - objectSize);
+					objects.push({ x: objectX, y: 0, w: objectSize, h: objectSize });
+				}
+
+				// Move and draw objects
+				objects = objects.filter(obj => {
+					obj.y += objectSpeed;
+					ctx.fillRect(obj.x, obj.y, obj.w, obj.h);
+
+					// Collision detection
+					if (
+						obj.x < characterX + characterWidth &&
+						obj.x + obj.w > characterX &&
+						obj.y < characterY + characterHeight &&
+						obj.y + obj.h > characterY
+					) {
+						gameState = "gameover";
+						updateCurrency(score);
+						return false;
+					}
+
+					// Keep object if still on screen
+					return obj.y <= canvas.height;
+				});
+
+				drawScore(score);
+				frameCount++;
+			} else if (gameState === "gameover") {
+				drawGameOverScreen(score);
+			}
+
+			requestAnimationFrame(gameLoop);
+		}
+
+		// Update local currency storage
+		function updateCurrency(score) {
+			let currency = parseInt(localStorage.getItem('currency')) || 0;
+			currency += score;
+			localStorage.setItem('currency', currency);
+			console.log('Currency Updated: ' + currency);
+		}
+
+		// Handle keypresses
+		document.addEventListener("keydown", event => {
+			if (event.key === "ArrowLeft") {
+				leftPressed = true;
+				if (gameState === "start") gameState = "playing";
+			} else if (event.key === "ArrowRight") {
+				rightPressed = true;
+				if (gameState === "start") gameState = "playing";
+			} else if (event.key === "r" && gameState === "gameover") {
+				// Restart game
+				characterX = canvas.width / 2;
+				objects = [];
+				rawScore = 0;
+				frameCount = 0;
+				gameState = "start";
+			} else if ((event.key === "b" || event.key === "B") && gameState === "gameover") {
+				// Go back to menu
+				window.location.href = "index.html";
+			}
+		});
+
+		document.addEventListener("keyup", event => {
+			if (event.key === "ArrowLeft") leftPressed = false;
+			if (event.key === "ArrowRight") rightPressed = false;
+		});
+
+		// Start loop
+		requestAnimationFrame(gameLoop);
+	</script>
+</body>
+</html>

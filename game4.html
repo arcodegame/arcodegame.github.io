@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Skyward Steps</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    background-color: #000000;
+    font-family: 'Press Start 2P', cursive;
+    color: rgb(0, 0, 0);
+  }
+
+  @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+  canvas {
+    display: block;
+    background-color: #000000;
+    margin: 0 auto;
+    border: 2px solid black;
+  }
+
+  #gameOverScreen {
+    display: none;
+    text-align: center;
+    color: white;
+  }
+
+  #gameOverScreen h1 {
+    font-size: 40px;
+    margin-bottom: 10px;
+  }
+
+  #gameOverScreen p {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  #gameOverScreen button {
+    background-color: #ff5050;
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background-color 0.3s;
+  }
+
+  #gameOverScreen button:hover {
+    background-color: #ff3030;
+  }
+</style>
+</head>
+<body>
+
+<div id="gameOverScreen">
+    <h1>Game Over</h1>
+    <p id="finalScore"></p>
+    <p id="currencyEarned"></p>
+    <button onclick="restartGame()">Restart</button>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const gameOverScreen = document.getElementById('gameOverScreen');
+const finalScore = document.getElementById('finalScore');
+const currencyEarned = document.getElementById('currencyEarned');
+
+canvas.width = 400 * 1.5;
+canvas.height = 600 * 1.5;
+
+let gameRunning = false;
+let score = 0;
+let frame = 0;
+let level = 1;
+let player, obstacles, powerUps, effects;
+
+function initGame() {
+    score = 0;
+    frame = 0;
+    level = 1;
+    player = {
+        x: canvas.width / 2 - 10,
+        y: canvas.height - 30,
+        width: 20,
+        height: 20,
+        dx: 0,
+        speed: 5,
+        baseSpeed: 5,
+        boostedSpeed: 10
+    };
+    obstacles = [];
+    powerUps = [];
+    effects = {
+        ghostMode: false,
+        autoAvoid: false,
+        speedBoost: false
+    };
+}
+
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'ArrowLeft') player.dx = -player.speed;
+    if (event.key === 'ArrowRight') player.dx = player.speed;
+});
+document.addEventListener('keyup', function(event) {
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') player.dx = 0;
+});
+
+function updatePlayer() {
+    if (effects.speedBoost) {
+        player.speed = player.boostedSpeed;
+    } else {
+        player.speed = player.baseSpeed;
+    }
+    player.x += player.dx;
+    player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+}
+
+function drawPlayer() {
+    ctx.fillStyle = effects.ghostMode ? 'rgba(255, 0, 0, 0.5)' : 'red';
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+}
+
+function generateObstacles() {
+    if (frame % 60 === 0) {
+        let size = Math.random() * (canvas.width - 100) + 30;
+        let x = Math.random() * (canvas.width - size);
+        obstacles.push({
+            x: x,
+            y: 0,
+            width: size,
+            height: 20,
+            color: `hsl(${Math.random() * 360}, 100%, 50%)`
+        });
+    }
+}
+
+function drawObstacles() {
+    obstacles.forEach(obstacle => {
+        ctx.fillStyle = obstacle.color;
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+    });
+}
+
+function moveObstacles() {
+    obstacles.forEach(obstacle => {
+        if (effects.autoAvoid) {
+            if (obstacle.x < player.x + player.width && obstacle.x + obstacle.width > player.x) {
+                obstacle.x += obstacle.width; // Move obstacles to the right
+            }
+        }
+        obstacle.y += 2 + level;
+    });
+    obstacles = obstacles.filter(obstacle => obstacle.y < canvas.height);
+}
+
+function generatePowerUps() {
+    if (frame % 300 === 0) {
+        let type = Math.floor(Math.random() * 3);
+        let x = Math.random() * (canvas.width - 20);
+        powerUps.push({
+            x: x,
+            y: 0,
+            width: 20,
+            height: 20,
+            type: type // 0: Ghost Mode, 1: Auto-Avoid, 2: Speed Boost
+        });
+    }
+}
+
+function drawPowerUps() {
+    powerUps.forEach(powerUp => {
+        ctx.fillStyle = ['blue', 'green', 'yellow'][powerUp.type];
+        ctx.fillRect(powerUp.x, powerUp.y, powerUp.width, powerUp.height);
+    });
+}
+
+function movePowerUps() {
+    powerUps.forEach(powerUp => {
+        powerUp.y += 2;
+    });
+    powerUps = powerUps.filter(powerUp => powerUp.y < canvas.height);
+}
+
+function collectPowerUps() {
+    powerUps.forEach((powerUp, index) => {
+        if (player.x < powerUp.x + powerUp.width &&
+            player.x + player.width > powerUp.x &&
+            player.y < powerUp.y + powerUp.height &&
+            player.y + player.height > powerUp.y) {
+            activatePowerUp(powerUp.type);
+            powerUps.splice(index, 1);
+        }
+    });
+}
+
+function activatePowerUp(type) {
+    switch (type) {
+        case 0:
+            effects.ghostMode = true;
+            setTimeout(() => effects.ghostMode = false, 5000);
+            break;
+        case 1:
+            effects.autoAvoid = true;
+            setTimeout(() => effects.autoAvoid = false, 5000);
+            break;
+        case 2:
+            effects.speedBoost = true;
+            setTimeout(() => effects.speedBoost = false, 5000);
+            break;
+    }
+}
+
+function checkCollisions() {
+    if (!effects.ghostMode) {
+        obstacles.forEach(obstacle => {
+            if (player.x < obstacle.x + obstacle.width &&
+                player.x + player.width > obstacle.x &&
+                player.y < obstacle.y + obstacle.height &&
+                player.y + player.height > obstacle.y) {
+                gameOver();
+            }
+        });
+    }
+}
+
+function updateScore() {
+    score++;
+    ctx.fillStyle = 'black';
+    ctx.font = '16px Arial';
+    ctx.fillText("Score: " + score + " Level: " + level, 10, 20);
+}
+
+// Update currency with the score when the game is over
+function updateCurrency(score) {
+    let currency = parseInt(localStorage.getItem('currency')) || 0;
+    currency += score;  // Add the score to the current currency
+    localStorage.setItem('currency', currency);
+    return currency;
+}
+
+function gameOver() {
+    gameRunning = false;
+    let totalCurrency = updateCurrency(score); // Update and get total currency
+    finalScore.textContent = `Your score: ${score}`;
+    currencyEarned.textContent = `Total Currency: ${totalCurrency}`;
+    gameOverScreen.style.display = 'block';
+    canvas.style.display = 'none';
+}
+
+function gameLoop() {
+    if (!gameRunning) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    frame++;
+    updatePlayer();
+    generatePowerUps();
+    movePowerUps();
+    drawPlayer();
+    drawPowerUps();
+    generateObstacles();
+    moveObstacles();
+    drawObstacles();
+    collectPowerUps();
+    checkCollisions();
+    updateScore();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function restartGame() {
+    gameOverScreen.style.display = 'none';
+    canvas.style.display = 'block';
+    gameRunning = true;
+    initGame();
+    gameLoop();
+}
+
+window.onload = function() {
+    canvas.style.display = 'block';
+    gameOverScreen.style.display = 'none';
+    gameRunning = true;
+    initGame();
+    gameLoop();
+};
+</script>
+</body>
+</html>

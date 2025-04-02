@@ -1,0 +1,96 @@
+<html><head>
+	<style>
+    canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+	</style>
+</head>
+<body>
+	<canvas id="canvas" width="1920" height="1080"></canvas>
+	<script>
+		const canvas = document.getElementById("canvas");
+		const ctx = canvas.getContext("2d");
+		let characterX = canvas.width / 2;
+		const characterY = canvas.height - 50;
+		const characterWidth = 20;
+		const characterHeight = 20;
+        let characterSpeed=15;
+		const objectWidth = 20;
+		const objectHeight = 20;
+        const colors = ["blue"];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+		let objectSpeed = 10;
+		let objects = [];
+		let isGameOver = false;
+		let requestId;
+        let score=0;
+		function gameLoop() {
+			if (!isGameOver) {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = randomColor;
+
+				if (leftPressed && characterX > 0) {
+                    score+=1;
+					characterX -= characterSpeed;
+				} else if (rightPressed && characterX < canvas.width - characterWidth) {
+                    score+=1;
+					characterX += characterSpeed;
+				}
+				ctx.fillRect(characterX, characterY, characterWidth, characterHeight);
+				if (frameCount % (50 - Math.floor(score / 100)) == 0) {
+					let objectX = Math.random() * (canvas.width - objectWidth);
+					objects.push({ x: objectX, y: 0 });
+				}
+				objects.forEach((obj, index) => {
+					obj.y += objectSpeed;
+					ctx.fillRect(obj.x, obj.y, objectWidth, objectHeight);
+				if (obj.x < characterX + characterWidth && obj.x + objectWidth > characterX && obj.y < characterY + characterHeight && obj.y + objectHeight > characterY) {
+					moveLeft = false;
+					moveRight = false;
+                    characterSpeed=10;
+                    frameCount = 0;
+					objects = [];
+					characterX = canvas.width / 2;
+                    alert("Game Over Score:"+score);
+                    location.reload();
+				}
+				if (obj.y > canvas.height) {
+					objects.splice(index, 1);
+				}
+			});
+				frameCount++;
+			}
+			requestId = requestAnimationFrame(gameLoop);
+		}
+		let leftPressed = false;
+		let rightPressed = false;
+		document.addEventListener("keydown", event => {
+			if (event.key == "ArrowLeft") {
+				leftPressed = true;
+				if (objects.length == 0) {
+					requestAnimationFrame(gameLoop);
+				}
+			} else if (event.key == "ArrowRight") {
+				rightPressed = true;
+				if (objects.length == 0) {
+					requestAnimationFrame(gameLoop);
+				}
+			}
+		});
+		document.addEventListener("keyup", event => {
+			if (event.key == "ArrowLeft") {
+				leftPressed = false;
+			} else if (event.key == "ArrowRight") {
+				rightPressed = false;
+			}
+		});
+		let frameCount = 0;
+	</script>
+
+
+
+</body></html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    #player {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: black;
+    }
+
+      @keyframes change-color {
+         0% {  background-color: #ff8c00; }
+         25% {  background-color: #00ff00; }
+         50% {  background-color: #0000ff; }
+         75% {  background-color: #ff00ff; }
+         100% {  background-color: #ff8c00; }
+       }
+    .enemy {
+      animation: change-color 2s infinite;
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: green;
+    }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <script>
+    var player = document.getElementById("player");
+    var enemies = [];
+    var gameOver = false;
+    var score = 0;
+    var speed = 5;
+    var spawnInterval = 700;
+    
+function enemyCollision(enemy, index) {
+  for (var i = 0; i < enemies.length; i++) {
+    if (i !== index) {
+      var otherEnemy = enemies[i];
+      var aRect = enemy.getBoundingClientRect();
+      var bRect = otherEnemy.getBoundingClientRect();
+      if (
+        !(aRect.bottom < bRect.top) &&
+        !(aRect.top > bRect.bottom) &&
+        !(aRect.right < bRect.left) &&
+        !(aRect.left > bRect.right)
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+    function createEnemy() {
+      var enemy = document.createElement("div");
+      enemy.className = "enemy";
+      enemy.style.top = Math.floor(Math.random() * (window.innerHeight - 50)) + "px";
+      enemy.style.left = Math.floor(Math.random() * (window.innerWidth - 50)) + "px";
+      document.body.appendChild(enemy);
+      enemies.push(enemy);
+    }
+    
+
+function update() {
+  if (gameOver) {
+    return;
+  }
+  for (var i = 0; i < enemies.length; i++) {
+    var enemy = enemies[i];
+    var dx = Math.random() + (parseInt(player.style.left) - parseInt(enemy.style.left));
+    var dy = parseInt(player.style.top) - parseInt(enemy.style.top);
+    var dist = Math.sqrt(dx * dx + dy * dy);
+    var vx = (speed * dx / dist) + Math.random();
+    var vy = (speed * dy / dist) + Math.random();
+    var newLeft = parseInt(enemy.style.left) + vx;
+    var newTop = parseInt(enemy.style.top) + vy;
+    enemy.style.left = newLeft + "px";
+    enemy.style.top = newTop + "px";
+    if (collision(player, enemy)) {
+      gameOver = true;
+      alert("Game over! Your score was " + score + ".");
+      location.reload();
+      return;
+    }
+    if (enemyCollision(enemy, i)) {
+      enemy.style.left = newLeft - vx + "px";
+      enemy.style.top = newTop - vy + "px";
+    }
+  }
+  requestAnimationFrame(update);
+}
+
+    
+
+    function collision(a, b) {
+      var aRect = a.getBoundingClientRect();
+      var bRect = b.getBoundingClientRect();
+      return !(
+        (aRect.bottom < bRect.top) ||
+        (aRect.top > bRect.bottom) ||
+        (aRect.right < bRect.left) ||
+        (aRect.left > bRect.right)
+      );
+    }
+    
+
+    window.addEventListener("mousemove", function(event) {
+      if (!gameOver) {
+        speed+=0.0001
+      	score+=1
+        player.style.left = (event.clientX - 25) + "px";
+        player.style.top = (event.clientY - 25) + "px";
+      }
+    });
+    
+    createEnemy();
+    update();
+    setInterval(function() {
+      createEnemy();
+      spawnInterval -= 100;
+      if (spawnInterval < 100) {
+        spawnInterval = 100;
+      }
+    }, spawnInterval);
+  </script>
+</body>
+</html>
+
+

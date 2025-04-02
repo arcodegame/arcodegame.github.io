@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>THE ARCODE GAMES</title>
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* General styles */
+        body {
+            background-color: #000;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            color: #fff;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        h1 {
+            font-size: 60px;
+            margin-top: 50px;
+            margin-bottom: 50px;
+            text-shadow: 0px 3px 3px rgba(255, 255, 255, 0.3);
+            animation: fadeInDown 1s ease-in-out;
+        }
+        /* Game boxes */
+        .game-box {
+            display: inline-block;
+            width: 250px;
+            height: 250px;
+            margin: 20px;
+            border-radius: 15px;
+            background-color: #388EE9;
+            opacity: 0.85;
+            box-shadow: 0px 0px 20px rgba(56, 142, 233, 0.6), 0px 0px 50px rgba(56, 142, 233, 0.3);
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+            background-size: cover;
+            position: relative;
+        }
+        .game-box:hover {
+            transform: scale(1.1);
+            opacity: 1;
+            box-shadow: 0px 0px 30px rgba(56, 142, 233, 0.8), 0px 0px 80px rgba(56, 142, 233, 0.6);
+        }
+        .game-title {
+            font-size: 30px;
+            margin-top: 50px;
+            text-shadow: 0px 3px 3px rgba(255, 255, 255, 0.3);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            mix-blend-mode: lighten;
+        }
+        .game-maker {
+            font-size: 14px;
+            margin-top: 120px;
+            text-align: center;
+        }
+        /* Currency box */
+        .currency-box {
+            font-size: 24px;
+            margin-top: 20px;
+            color: #00ff00;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            animation: fadeInUp 1s ease-in-out;
+        }
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .modal-content {
+            background-color: #111;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+            text-align: left;
+            border-radius: 15px;
+            box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.6);
+            animation: slideIn 0.5s ease-in-out;
+        }
+        .modal-content h2 {
+            font-size: 40px;
+            color: #fff;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close:hover,
+        .close:focus {
+            color: #fff;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        .modal-button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #388EE9;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s ease-in-out, background-color 0.3s ease-in-out;
+        }
+        .modal-button:hover {
+            background-color: #fff;
+            color: #388EE9;
+            transform: scale(1.05);
+        }
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideIn {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        /* Canvas styles */
+        #backgroundCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        /* Particle styles */
+        .particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: particleMovement 8s infinite;
+        }
+        @keyframes particleMovement {
+            0% {
+                transform: translateY(0) translateX(0) scale(1);
+            }
+            100% {
+                transform: translateY(-100vh) translateX(50px) scale(0.5);
+            }
+        }
+        .particle:nth-child(odd) {
+            animation-duration: 10s;
+            background-color: rgba(56, 142, 233, 0.8);
+        }
+    </style>
+</head>
+<body onload="init();">
+    <canvas id="backgroundCanvas"></canvas>
+
+    <h1>THE ARCODE GAMES</h1>
+
+    <!-- Display player's current currency -->
+    <div class="currency-box">Arcoin: <span id="currencyDisplay">0</span></div>
+
+    <!-- Game boxes -->
+    <div class="game-box" onclick="showGameInfo('Snake', '', '2023', 'Yes', 'Classic snake game', 'game1.html', 100)">
+        <h2 class="game-title">SNAKE</h2>
+        <h3 class="game-maker"></h3>
+    </div>
+    <div class="game-box" onclick="showGameInfo('Swerves', '', '2023', 'No', 'Avoid obstacles by swerving', 'game2.html', 150)">
+        <h2 class="game-title">SWERVES</h2>
+        <h3 class="game-maker"></h3>
+    </div>
+    <div class="game-box" onclick="showGameInfo('Wick', '', '2023', 'Yes', 'Survival shooting game', 'game3.html', 200)">
+        <h2 class="game-title">WICK</h2>
+        <h3 class="game-maker"></h3>
+    </div>
+    <div class="game-box" onclick="showGameInfo('Rocket', '', '2023', 'No', 'Rocket flying game', 'game4.html', 250)">
+        <h2 class="game-title">ROCKET</h2>
+        <h3 class="game-maker"></h3>
+    </div>
+    <div class="game-box" onclick="showGameInfo('Shoot', '', '2023', 'Yes', 'Top-down shooter game', 'game5.html', 300)">
+        <h2 class="game-title">SHOOT</h2>
+        <h3 class="game-maker"></h3>
+            
+    </div>
+
+    <!-- Modal for game information -->
+    <div id="gameModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle"></h2>
+            <p id="modalDescription"></p>
+            <p><strong>Release Date:</strong> <span id="modalReleaseDate"></span></p>
+            <p><strong>Developer:</strong> <span id="modalDeveloper"></span></p>
+            <p><strong>Multiplayer:</strong> <span id="modalMultiplayer"></span></p>
+            <div class="modal-buttons">
+                <button class="modal-button" id="playButton">Play</button>
+                <button class="modal-button" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating particles -->
+    <div class="particle" style="left: 10%; animation-duration: 8s;"></div>
+    <div class="particle" style="left: 30%; animation-duration: 12s;"></div>
+    <div class="particle" style="left: 50%; animation-duration: 10s;"></div>
+    <div class="particle" style="left: 70%; animation-duration: 6s;"></div>
+    <div class="particle" style="left: 90%; animation-duration: 14s;"></div>
+
+    <p>Follow us on Instagram: <a href="https://www.instagram.com/arcode_games/">@arcode_games</a></p>
+    <p>Copyright © 2023 THE ARCODE GAMES</p>
+    <p>Developed by Andrew Samaha</p>
+
+    <script>
+        // Declare global variables
+        let tileSize = 20;
+        let fadeFactor = 0.05;
+        let canvas, ctx;
+        let columns = [];
+        let centerX, centerY;
+        let angle = 0, radius = 0;
+        let selectedGameUrl = '';
+        let selectedGameReward = 0;
+
+        function init() {
+            initBackgroundCanvas();
+            initCurrency();
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function initCurrency() {
+            let currency = localStorage.getItem('currency');
+            if (!currency) {
+                currency = 0;
+                localStorage.setItem('currency', currency);
+            }
+            document.getElementById('currencyDisplay').innerText = currency;
+        }
+
+        function showGameInfo(title, developer, releaseDate, multiplayer, description, gameUrl, reward) {
+            selectedGameUrl = gameUrl;
+            selectedGameReward = reward;
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalDescription').innerText = description;
+            document.getElementById('modalReleaseDate').innerText = releaseDate;
+            document.getElementById('modalDeveloper').innerText = developer;
+            document.getElementById('modalMultiplayer').innerText = multiplayer;
+            document.getElementById('gameModal').style.display = 'block';
+            document.getElementById('playButton').onclick = function() {
+                playGame(selectedGameUrl, selectedGameReward);
+            };
+        }
+
+        function closeModal() {
+            document.getElementById('gameModal').style.display = 'none';
+        }
+
+        function playGame(gameUrl, reward) {
+            // Simulate the player earning currency after playing the game
+            let currency = parseInt(localStorage.getItem('currency')) || 0;
+            currency += reward;
+            localStorage.setItem('currency', currency);
+            window.location.href = gameUrl;
+        }
+
+        function initBackgroundCanvas() {
+            canvas = document.getElementById('backgroundCanvas');
+            resizeCanvas();
+            ctx = canvas.getContext('2d');
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+            initMatrix();
+            tick();
+        }
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            centerX = canvas.width / 2;
+            centerY = canvas.height / 2;
+        }
+
+        function onWindowResize() {
+            resizeCanvas();
+            columns = [];
+            angle = 0;
+            radius = 0;
+            initMatrix();
+        }
+
+        function initMatrix() {
+            let numColumns = Math.floor(canvas.width / tileSize);
+            for (let i = 0; i < numColumns; ++i) {
+                columns.push({
+                    angle: angle,
+                    radius: radius
+                });
+                angle += Math.PI / 15;  // Wider spiral
+                radius += 1;  // Closer together
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = `rgba(0, 0, 0, ${fadeFactor})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `${tileSize - 2}px monospace`;
+            ctx.fillStyle = "#388EE9";
+
+            for (let i = 0; i < columns.length; ++i) {
+                let x = centerX + columns[i].radius * Math.cos(columns[i].angle);
+                let y = centerY + columns[i].radius * Math.sin(columns[i].angle);
+                let randomCharacter = String.fromCharCode(33 + Math.floor(Math.random() * 94));
+
+                ctx.fillText(randomCharacter, x, y);
+
+                columns[i].angle += Math.PI / 150;  // Faster angular speed
+                columns[i].radius += 1;  // Faster outward movement
+
+                if (x < 0 || x > canvas.width || y < 0 || y > canvas.height) {
+                    columns[i].radius = 0;
+                    columns[i].angle = Math.random() * Math.PI * 2; // Start at a random angle
+                }
+            }
+        }
+
+        function tick() {
+            draw();
+            requestAnimationFrame(tick);
+        }
+    </script>
+</body>
+</html>

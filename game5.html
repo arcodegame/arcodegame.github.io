@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Point and Shoot Block Shooter</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    #gameCanvas {
+      display: block;
+      background-color: #282828;
+    }
+
+    #overlay {
+      color: white;
+      font-size: 30px;
+      text-align: center;
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 10;
+    }
+
+    #score {
+      color: white;
+      font-size: 30px;
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="gameCanvas"></canvas>
+  <div id="overlay"></div>
+  <div id="score">Score: 0</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('overlay');
+    const scoreDisplay = document.getElementById('score');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const player = {
+      x: canvas.width / 2,
+      y: canvas.height / 2,
+      size: 30,
+      color: 'blue',
+    };
+
+    const bullets = [];
+    const blocks = [];
+    let score = 0;
+    let mouseX = canvas.width / 2;
+    let mouseY = canvas.height / 2;
+    let gameRunning = true;
+    let shootingInterval;
+    let currentShootingDelay = 300;
+    const minShootingDelay = 50;
+    const arrowLength = 50;
+    const safeZoneRadius = 800;
+    const spawnDistance = 900;
+
+    function drawPlayer() {
+      const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+      ctx.fillStyle = player.color;
+      ctx.beginPath();
+      ctx.moveTo(player.x + player.size * Math.cos(angle), player.y + player.size * Math.sin(angle));
+      ctx.lineTo(player.x + player.size * Math.cos(angle + (2 * Math.PI) / 3), player.y + player.size * Math.sin(angle + (2 * Math.PI) / 3));
+      ctx.lineTo(player.x + player.size * Math.cos(angle - (2 * Math.PI) / 3), player.y + player.size * Math.sin(angle - (2 * Math.PI) / 3));
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawAimArrow() {
+      const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+      const arrowEndX = player.x + arrowLength * Math.cos(angle);
+      const arrowEndY = player.y + arrowLength * Math.sin(angle);
+
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(player.x, player.y);
+      ctx.lineTo(arrowEndX, arrowEndY);
+      ctx.stroke();
+
+      const arrowHeadLength = 10;
+      ctx.beginPath();
+      ctx.moveTo(arrowEndX, arrowEndY);
+      ctx.lineTo(arrowEndX - arrowHeadLength * Math.cos(angle - Math.PI / 6), arrowEndY - arrowHeadLength * Math.sin(angle - Math.PI / 6));
+      ctx.lineTo(arrowEndX - arrowHeadLength * Math.cos(angle + Math.PI / 6), arrowEndY - arrowHeadLength * Math.sin(angle + Math.PI / 6));
+      ctx.closePath();
+      ctx.fillStyle = 'white';
+      ctx.fill();
+    }
+
+    function createBullet() {
+      const angle = Math.atan2(mouseY - player.y, mouseX - player.x);
+      bullets.push({
+        x: player.x,
+        y: player.y,
+        width: 10,
+        height: 10,
+        angle: angle,
+        speed: 8
+      });
+    }
+
+    function createBlock() {
+      for (let i = 0; i < (score / 1000 + 1); i++) {
+        const blockSize = Math.random() * 50 + 20;
+        const randomAngle = Math.random() * 2 * Math.PI;
+        const distance = safeZoneRadius + spawnDistance * Math.random();
+
+        let blockX = player.x + distance * Math.cos(randomAngle);
+        let blockY = player.y + distance * Math.sin(randomAngle);
+
+        blockX = Math.max(0, Math.min(blockX, canvas.width - blockSize));
+        blockY = Math.max(0, Math.min(blockY, canvas.height - blockSize));
+
+        blocks.push({
+          x: blockX,
+          y: blockY,
+          width: blockSize,
+          height: blockSize,
+          speed: 1 + score / 10 * 0.05,
+          color: 'red',
+        });
+      }
+    }
+
+    function updateBullets() {
+      bullets.forEach((bullet, index) => {
+        bullet.x += bullet.speed * Math.cos(bullet.angle);
+        bullet.y += bullet.speed * Math.sin(bullet.angle);
+        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
+          bullets.splice(index, 1);
+        }
+      });
+    }
+
+    function updateBlocks() {
+      blocks.forEach((block, index) => {
+        const angle = Math.atan2(player.y - block.y, player.x - block.x);
+        block.x += block.speed * Math.cos(angle);
+        block.y += block.speed * Math.sin(angle);
+
+        if (detectCollision(player, block)) {
+          endGame();
+        }
+      });
+    }
+
+    function detectCollision(rect1, rect2) {
+      return rect1.x < rect2.x + rect2.width &&
+             rect1.x + rect1.size > rect2.x &&
+             rect1.y < rect2.y + rect2.height &&
+             rect1.y + rect1.size > rect2.y;
+    }
+
+    function checkCollisions() {
+      bullets.forEach((bullet, bIndex) => {
+        blocks.forEach((block, blIndex) => {
+          if (
+            bullet.x < block.x + block.width &&
+            bullet.x + bullet.width > block.x &&
+            bullet.y < block.y + block.height &&
+            bullet.y + bullet.height > block.y
+          ) {
+            bullets.splice(bIndex, 1);
+            blocks.splice(blIndex, 1);
+            score += 10;
+            scoreDisplay.textContent = 'Score: ' + score;
+            updateShootingDelay();
+          }
+        });
+      });
+    }
+
+    function updateShootingDelay() {
+      currentShootingDelay = Math.max(minShootingDelay, 300 - score * 10);
+      clearInterval(shootingInterval);
+      shootingInterval = setInterval(createBullet, currentShootingDelay);
+    }
+
+    function movePlayer() {
+      canvas.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+      });
+
+      canvas.addEventListener('mousedown', () => {
+        if (gameRunning && !shootingInterval) {
+          createBullet();
+          shootingInterval = setInterval(createBullet, currentShootingDelay);
+        }
+      });
+
+      canvas.addEventListener('mouseup', () => {
+        clearInterval(shootingInterval);
+        shootingInterval = null;
+      });
+    }
+
+    function endGame() {
+      gameRunning = false;
+      clearInterval(shootingInterval);
+      updateCurrency(score);
+      overlay.innerHTML = `
+        <h1>Game Over</h1>
+        <p>Score: ${score}</p>
+        <p>Currency Earned: ${score}</p>
+        <p>Press R to Restart</p>
+        <p>Press B to Return to Menu</p>
+      `;
+      overlay.style.display = 'block';
+    }
+
+    function updateCurrency(score) {
+      let currency = parseInt(localStorage.getItem('currency')) || 0;
+      currency += score;
+      localStorage.setItem('currency', currency);
+      console.log('Currency Updated: ' + currency);
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      drawPlayer();
+      drawAimArrow();
+      updateBullets();
+      updateBlocks();
+      checkCollisions();
+
+      bullets.forEach(bullet => {
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
+      });
+
+      blocks.forEach(block => {
+        ctx.fillStyle = block.color;
+        ctx.fillRect(block.x, block.y, block.width, block.height);
+      });
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function spawnBlocks() {
+      setInterval(() => {
+        if (gameRunning) {
+          createBlock();
+        }
+      }, 1000);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (!gameRunning) {
+        if (e.key === 'r' || e.key === 'R') {
+          location.reload();
+        } else if (e.key === 'b' || e.key === 'B') {
+          window.location.href = "index.html";
+        }
+      }
+    });
+
+    movePlayer();
+    gameLoop();
+    spawnBlocks();
+  </script>
+</body>
+</html>

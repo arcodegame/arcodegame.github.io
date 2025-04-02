@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Drift Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #2c3e50;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #ecf0f1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let keys = {};
+let friction = 0.98;
+
+// Event listeners for key presses
+document.addEventListener('keydown', (e) => {
+    keys[e.code] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+    keys[e.code] = false;
+});
+
+// Load car image
+const carImage = new Image();
+carImage.src = 'car.png';
+
+let imageLoaded = false;
+
+carImage.onload = function() {
+    imageLoaded = true;
+};
+
+carImage.onerror = function() {
+    console.error('Failed to load car image.');
+    alert('Failed to load car image. Please ensure car.png is in the correct directory.');
+};
+
+// Car object
+let car = {
+    x: 0,
+    y: 0,
+    width: 30,
+    height: 100,
+    speed: 0,
+    acceleration: 0.2,
+    maxSpeed: 10,
+    angle: 0,
+    turnSpeed: 0.05,
+    velX: 0,
+    velY: 0
+};
+
+// World dimensions
+let world = {
+    width: 2000,
+    height: 2000
+};
+
+function update() {
+    // Accelerate
+    if (keys['ArrowUp']) {
+        car.speed += car.acceleration;
+    }
+    // Brake/Reverse
+    if (keys['ArrowDown']) {
+        car.speed -= car.acceleration;
+    }
+
+    // Limit speed
+    if (car.speed > car.maxSpeed) car.speed = car.maxSpeed;
+    if (car.speed < -car.maxSpeed / 2) car.speed = -car.maxSpeed / 2;
+
+    // Turn
+    if (keys['ArrowLeft']) {
+        car.angle -= car.turnSpeed * (car.speed / car.maxSpeed);
+    }
+    if (keys['ArrowRight']) {
+        car.angle += car.turnSpeed * (car.speed / car.maxSpeed);
+    }
+
+    // Calculate velocity
+    car.velX = Math.sin(car.angle) * car.speed;
+    car.velY = -Math.cos(car.angle) * car.speed;
+
+    // Update position
+    car.x += car.velX;
+    car.y += car.velY;
+
+    // Apply friction
+    car.speed *= friction;
+
+    // Keep car within world boundaries
+    if (car.x < -world.width / 2) car.x = -world.width / 2;
+    if (car.x > world.width / 2) car.x = world.width / 2;
+    if (car.y < -world.height / 2) car.y = -world.height / 2;
+    if (car.y > world.height / 2) car.y = world.height / 2;
+}
+
+function draw() {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Save the current context
+    ctx.save();
+
+    // Translate to keep the car centered (camera follows the car)
+    ctx.translate(canvas.width / 2 - car.x, canvas.height / 2 - car.y);
+
+    // Draw the background (e.g., a grid)
+    drawBackground();
+
+    // Draw the car
+    drawCar();
+
+    // Restore the context
+    ctx.restore();
+}
+
+function drawBackground() {
+    ctx.fillStyle = '#bdc3c7';
+    ctx.fillRect(-world.width / 2, -world.height / 2, world.width, world.height);
+
+    // Draw grid lines
+    ctx.strokeStyle = '#7f8c8d';
+    ctx.lineWidth = 1;
+
+    for (let x = -world.width / 2; x <= world.width / 2; x += 100) {
+        ctx.beginPath();
+        ctx.moveTo(x, -world.height / 2);
+        ctx.lineTo(x, world.height / 2);
+        ctx.stroke();
+    }
+
+    for (let y = -world.height / 2; y <= world.height / 2; y += 100) {
+        ctx.beginPath();
+        ctx.moveTo(-world.width / 2, y);
+        ctx.lineTo(world.width / 2, y);
+        ctx.stroke();
+    }
+}
+
+function drawCar() {
+    ctx.save();
+    ctx.translate(car.x, car.y);
+    ctx.rotate(car.angle);
+
+    if (imageLoaded) {
+        ctx.drawImage(carImage, -car.width , -car.height, car.width/2, car.height/2);
+    } else {
+        // Draw a placeholder rectangle
+        ctx.fillStyle = 'red';
+        ctx.fillRect(-car.width , -car.height, car.width/2, car.height/2);
+    }
+
+    ctx.restore();
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+// Start the game loop immediately
+gameLoop();
+
+    </script>
+</body>
+</html>

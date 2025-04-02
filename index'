@@ -1,0 +1,213 @@
+<html><head>
+    <title>THE ARCODE GAMES</title>
+    <style>
+      #background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: -1;
+      }
+      @keyframes change-op {
+ 	 0% { opacity: 0.8; }
+ 	 25% { opacity: 0.9; }
+         50% { opacity: 0.8; }
+         75% { opacity: 0.9; }
+         100% { opacity: 0.8; }
+       }
+      body {
+        background-color: #000;
+        font-family: 'Press Start 2P', cursive;
+        font-size: 16px;
+        color: #fff;
+        text-align: center;
+        margin-top: 50px;
+      }
+      h1 {
+        font-size: 60px;
+        margin-bottom: 50px;
+        text-shadow: 0px 3px 3px rgba(255, 255, 255, 0.3);
+	margin-top: 50px;
+      }
+      .game-box {
+        display: inline-block;
+        width: 250px;
+        height: 250px;
+        margin: 20px;
+        border-radius: 5px;
+        background-color: #388EE9;
+        opacity: 0.8;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.3);
+        cursor: pointer;
+        transition: transform 0.3s ease-in-out;
+        background-image: url('path/to/image1.jpg');
+        background-size: cover;
+        animation: change-op 5s infinite;
+      }
+      .game-box:nth-child(2) {
+        background-image: url('path/to/image2.jpg');
+        background-size: cover;
+      }
+      .game-box:nth-child(3) {
+        background-image: url('path/to/image3.jpg');
+        background-size: cover;
+      }
+      .game-box:nth-child(4) {
+        background-image: url('path/to/image2.jpg');
+        background-size: cover;
+      }
+      .game-box:nth-child(5) {
+        background-image: url('path/to/image3.jpg');
+        background-size: cover;
+      }
+      .game-box:hover {
+		animation: none;
+        transform: scale(1.075);
+        opacity: 1;
+
+      }
+      .game-title {
+        font-size: 30px;
+        margin-top: 50px;
+        text-shadow: 0px 3px 3px rgba(255, 255, 255, 0.3);
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px;
+        mix-blend-mode: lighten;
+      }
+      @keyframes change-color {
+ 		     0% { color: #ff8c00; }
+ 		     25% { color: #00ff00; }
+         50% { color: #0000ff; }
+         75% { color: #ff00ff; }
+         100% { color: #ff8c00; }
+       }
+      body p {
+        animation: change-color 5s infinite;
+       }
+       .game-maker {
+       font-size: 14px;
+       margin-top: 120px;
+       text-align: center;
+       }
+
+    </style>
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P&amp;display=swap" rel="stylesheet">
+  </head>
+  <body onload="init();" style="margin: 0; padding: 0; background-color: #000000;">
+  <div id="background"><canvas width="2560" height="1281"></canvas></div>
+
+
+  <style>
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+<meta charset="UTF-8">
+<title>Matrix Text Effect - pingpoli.de</title>
+<script>
+var tileSize = 20;
+var fadeFactor = 0.05;
+var canvas;
+var ctx;
+var columns = [];
+var maxStackHeight;
+function init() {
+  var background = document.getElementById('background');
+  canvas = document.createElement('canvas');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  background.appendChild(canvas);
+  ctx = canvas.getContext('2d');
+    canvas = document.getElementById( 'canvas' );
+    ctx = canvas.getContext( '2d' );
+    initMatrix();
+    tick();
+}
+function initMatrix()
+{
+    maxStackHeight = Math.ceil(canvas.height/tileSize);
+    for ( let i = 0 ; i < canvas.width/tileSize ; ++i )
+    { var column = {};
+        column.x = i*tileSize;
+        column.stackHeight = 10+Math.random()*maxStackHeight;
+        column.stackCounter = 0;
+        columns.push( column );
+    }
+}
+function draw()
+{
+    ctx.fillStyle = "rgba( 0 , 0 , 0 , "+fadeFactor+" )";
+    ctx.fillRect( 0 , 0 , canvas.width , canvas.height );
+    ctx.font = (tileSize-2)+"px monospace";
+    ctx.fillStyle = "rgb( 56 , 142 , 233 )";
+    for ( let i = 0 ; i < columns.length ; ++i )
+    {
+        var randomCharacter = String.fromCharCode( 33+Math.floor(Math.random()*94) );
+        ctx.fillText( randomCharacter , columns[i].x , columns[i].stackCounter*tileSize+tileSize );
+        if ( ++columns[i].stackCounter >= columns[i].stackHeight )
+        {
+            columns[i].stackHeight = 10+Math.random()*maxStackHeight;
+            columns[i].stackCounter = 0;
+        }
+    }
+}
+function tick() 
+{    
+    draw();
+    setTimeout( tick , 50 );
+}
+		document.addEventListener("DOMContentLoaded", function(event) {
+			var canvas = document.getElementById("canvas");
+			canvas.width = screen.width;
+      canvas.height= screen.height;
+		});
+</script>
+
+
+  <canvas id="canvas" style="display:block; margin:0 auto; position:fixed; top:0; left:0; z-index:-1; opacity: 0.9" width="1920" height="1080"></canvas>
+
+
+
+<h1>THE ARCODE GAMES</h1>
+<div class="game-box" onclick="window.location.href='game1.html'">
+  <h2 class="game-title">SNAKE</h2>
+  <h3 class="game-maker">Andrew samaha</h3>
+</div>
+<div class="game-box" onclick="window.location.href='game2.html'">
+  <h2 class="game-title">SWERVES</h2>
+  <h3 class="game-maker">Andrew samaha</h3>
+</div>
+<div class="game-box" onclick="window.location.href='game3.html'">
+  <h2 class="game-title">WICK</h2>
+  <h3 class="game-maker">Andrew samaha</h3>
+</div>
+<div class="game-box" onclick="window.location.href='game4.html'">
+  <h2 class="game-title">...</h2>
+  <h3 class="game-maker">...</h3>
+</div>
+<div class="game-box" onclick="window.location.href='game5.html'">
+  <h2 class="game-title">...</h2>
+  <h3 class="game-maker">...</h3>
+</div>
+<div class="game-box" onclick="window.location.href='game6.html'">
+  <h2 class="game-title">...</h2>
+  <h3 class="game-maker">...</h3>
+    </div>
+<div class="game-box" onclick="window.location.href='game4.html'">
+  <h2 class="game-title">...</h2>
+  <h3 class="game-maker">...</h3>
+</div>
+
+<p>Follow us on Instagram: <a href="https://www.instagram.com/arcode_games/">@arcode_games</a></p>
+<p>Copyright © 2023 THE ARCODE GAMES</p>
+<p>Developed by Andrew Samaha</p>
+
+
+  
+
+</body></html>

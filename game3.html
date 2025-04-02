@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      background-color: black;
+      margin: 0;
+      overflow: hidden;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    #player {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: white;
+    }
+
+    @keyframes change-color {
+      0% { background-color: #ff8c00; }
+      25% { background-color: #00ff00; }
+      50% { background-color: #0000ff; }
+      75% { background-color: #ff00ff; }
+      100% { background-color: #ff8c00; }
+    }
+
+    .enemy {
+      animation: change-color 2s infinite;
+      position: absolute;
+      width: 10px;
+      height: 10px;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      text-align: center;
+    }
+
+    #overlay.hidden {
+      display: none;
+    }
+
+    #overlay h1 {
+      margin: 0 0 20px 0;
+      font-size: 48px;
+      color: red;
+    }
+
+    #overlay p {
+      font-size: 24px;
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <div id="overlay">
+    <p>Move your mouse to start</p>
+  </div>
+
+  <script>
+    const player = document.getElementById("player");
+    const overlay = document.getElementById("overlay");
+
+    let enemies = [];
+    let gameOver = false;
+    let gameStarted = false;
+    let score = 0;
+    let speed = 5;
+    let spawnInterval = 700;
+    let enemySpawner;
+
+    function enemyCollision(enemy, index) {
+      for (let i = 0; i < enemies.length; i++) {
+        if (i !== index) {
+          const aRect = enemy.getBoundingClientRect();
+          const bRect = enemies[i].getBoundingClientRect();
+          if (
+            !(aRect.bottom < bRect.top) &&
+            !(aRect.top > bRect.bottom) &&
+            !(aRect.right < bRect.left) &&
+            !(aRect.left > bRect.right)
+          ) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function createEnemy() {
+      const enemy = document.createElement("div");
+      enemy.className = "enemy";
+      enemy.style.top = Math.floor(Math.random() * (window.innerHeight - 50)) + "px";
+      enemy.style.left = Math.floor(Math.random() * (window.innerWidth - 50)) + "px";
+      document.body.appendChild(enemy);
+      enemies.push(enemy);
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      for (let i = 0; i < enemies.length; i++) {
+        const enemy = enemies[i];
+        const dx = parseInt(player.style.left) - parseInt(enemy.style.left);
+        const dy = parseInt(player.style.top) - parseInt(enemy.style.top);
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const vx = (speed * dx / dist) + Math.random();
+        const vy = (speed * dy / dist) + Math.random();
+
+        const newLeft = parseInt(enemy.style.left) + vx;
+        const newTop = parseInt(enemy.style.top) + vy;
+
+        enemy.style.left = newLeft + "px";
+        enemy.style.top = newTop + "px";
+
+        if (collision(player, enemy)) {
+          gameOver = true;
+          endGame();
+          return;
+        }
+
+        if (enemyCollision(enemy, i)) {
+          enemy.style.left = newLeft - vx + "px";
+          enemy.style.top = newTop - vy + "px";
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    function collision(a, b) {
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+      return !(
+        aRect.bottom < bRect.top ||
+        aRect.top > bRect.bottom ||
+        aRect.right < bRect.left ||
+        aRect.left > bRect.right
+      );
+    }
+
+    function endGame() {
+      updateCurrency(score);
+      overlay.innerHTML = `
+        <h1>Game Over</h1>
+        <p>Score: ${score}</p>
+        <p>Currency Earned: ${score}</p>
+        <p>Press R to Restart</p>
+        <p>Press B to Return to Menu</p>
+      `;
+      overlay.classList.remove("hidden");
+      clearInterval(enemySpawner);
+    }
+
+    function updateCurrency(score) {
+      let currency = parseInt(localStorage.getItem('currency')) || 0;
+      currency += score;
+      localStorage.setItem('currency', currency);
+      console.log('Currency Updated: ' + currency);
+    }
+
+    window.addEventListener("mousemove", function (event) {
+      if (gameOver) return;
+
+      if (!gameStarted) {
+        gameStarted = true;
+        overlay.classList.add("hidden");
+        createEnemy();
+        update();
+        enemySpawner = setInterval(() => {
+          createEnemy();
+          spawnInterval = Math.max(100, spawnInterval - 100);
+        }, spawnInterval);
+      }
+
+      speed += 0.0005;
+      score += 1;
+      player.style.left = (event.clientX - 1) + "px";
+      player.style.top = (event.clientY - 1) + "px";
+    });
+
+    window.addEventListener("keydown", function (event) {
+      if (!gameOver) return;
+
+      if (event.key === "r" || event.key === "R") {
+        location.reload();
+      } else if (event.key === "b" || event.key === "B") {
+        window.location.href = "index.html";
+      }
+    });
+  </script>
+</body>
+</html>
